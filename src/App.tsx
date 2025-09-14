@@ -38,13 +38,14 @@ const App: React.FC = () => {
     pengaduan: useRef<HTMLDivElement>(null),
   };
 
+  // Status mapping consistent with blockchain contract
   const statusMap: { [key: string]: string } = {
-    '0': 'Terkirim',
-    '1': 'Diverifikasi',
-    '2': 'Diproses',
-    '3': 'Ditindaklanjuti',
-    '4': 'Selesai',
-    '5': 'Ditolak'
+    '0': 'Terkirim',          // Sent
+    '1': 'Diverifikasi',      // Verified
+    '2': 'Diproses',          // Processing
+    '3': 'Ditindaklanjuti',   // Under Action
+    '4': 'Selesai',           // Completed
+    '5': 'Ditolak'            // Rejected
   };
 
   // Scroll to section function
@@ -164,25 +165,39 @@ const App: React.FC = () => {
   // Fetch complaints
   const fetchComplaints = async () => {
     try {
-      const readOnlyProvider = provider || new ethers.BrowserProvider((window as any).ethereum);
+      // Use existing provider or create new one for read operations
+      let readOnlyProvider = provider;
+      if (!readOnlyProvider && typeof window !== 'undefined' && (window as any).ethereum) {
+        readOnlyProvider = new ethers.BrowserProvider((window as any).ethereum);
+      }
+      
+      if (!readOnlyProvider) {
+        console.warn('No provider available for fetching complaints');
+        return;
+      }
+      
       const readOnlyContract = getContractReadOnly(readOnlyProvider);
       
       const fetchedComplaints: Complaint[] = [];
       
+      // Fetch complaints with better error handling
       for (let i = 0; i < 100; i++) {
         try {
           const complaint = await readOnlyContract.daftarPengaduan(i);
           
+          // Check if complaint exists (non-zero address indicates valid complaint)
           if (complaint.pengirim !== "0x0000000000000000000000000000000000000000") {
             fetchedComplaints.push({
               id: complaint.id.toString(),
               deskripsi: complaint.deskripsi,
               pengirim: complaint.pengirim,
               timestamp: new Date(Number(complaint.timestamp) * 1000).toLocaleString(),
-              status: statusMap[complaint.status.toString()] || `Status ${complaint.status.toString()}`
+              // Ensure proper status mapping with fallback
+              status: complaint.status.toString()
             });
           }
-        } catch (e) {
+        } catch (error) {
+          // Break loop when we reach non-existent complaints
           break;
         }
       }
@@ -190,7 +205,71 @@ const App: React.FC = () => {
       setComplaints(fetchedComplaints);
     } catch (error) {
       console.error('Failed to fetch complaints:', error);
-      setErrorMessage('Failed to load complaints. Please refresh the page.');
+      setErrorMessage('Gagal memuat pengaduan. Silakan refresh halaman.');
+    }
+  };
+
+  // Set up blockchain event listeners for real-time updates
+  useEffect(() => {
+    if (!provider) return;
+
+    const setupEventListeners = async () => {
+      try {
+        const contract = getContractReadOnly(provider);
+        
+        // Listen for new complaints
+        const complaintFilter = contract.filters.PengaduanBaru?.();
+        if (complaintFilter) {
+          contract.on(complaintFilter, (id, pengirim, deskripsi, timestamp) => {
+            console.log('New complaint detected:', { id, pengirim, deskripsi, timestamp });
+            fetchComplaints(); // Refresh complaints list
+          });
+        }
+        
+        // Listen for status changes
+        const statusFilter = contract.filters.StatusDiubah?.();
+        if (statusFilter) {
+          contract.on(statusFilter, (id, statusBaru) => {
+            console.log('Status change detected:', { id, statusBaru });
+            fetchComplaints(); // Refresh complaints list
+          });
+        }
+        
+        // Fallback: Poll for updates every 10 seconds
+        const pollInterval = setInterval(() => {
+          fetchComplaints();
+        }, 10000);
+        
+        return () => {
+          contract.removeAllListeners();
+          clearInterval(pollInterval);
+        };
+      } catch (error) {
+        console.error('Failed to setup event listeners:', error);
+      }
+    };
+
+    const cleanup = setupEventListeners();
+    
+    return () => {
+      cleanup?.then(cleanupFn => cleanupFn?.());
+    };
+  }, [provider]);
+
+  // Enhanced fetch with retry mechanism
+  const fetchComplaintsWithRetry = async (retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await fetchComplaints();
+        break;
+      } catch (error) {
+        console.error(`Fetch attempt ${i + 1} failed:`, error);
+        if (i === retries - 1) {
+          setErrorMessage('Gagal memuat pengaduan setelah beberapa percobaan. Silakan refresh halaman.');
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
     }
   };
 
@@ -199,8 +278,15 @@ const App: React.FC = () => {
 
   // Initialize
   useEffect(() => {
-    fetchComplaints();
+    fetchComplaintsWithRetry();
   }, []);
+
+  // Refresh complaints when wallet connects
+  useEffect(() => {
+    if (status === 'Connected') {
+      fetchComplaintsWithRetry();
+    }
+  }, [status]);
 
   return (
     <motion.div 
