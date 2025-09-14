@@ -6,26 +6,26 @@ const About: React.FC = () => {
   const features = [
     {
       icon: Database,
-      title: 'Teknologi Blockchain',
-      description: 'Setiap pengaduan disimpan dalam blok yang terhubung secara kriptografis, memastikan data tidak dapat diubah atau dihapus.',
+      title: 'Penyimpanan Data yang Tak Terubah (Immutable)',
+      description: 'Setiap pengaduan dicatat dalam blok yang terhubung secara kriptografis. Begitu data masuk ke blockchain, data tersebut tidak dapat diubah, dihapus, atau dimanipulasi oleh siapa pun, termasuk administrator sistem. Ini menjamin integritas historis setiap pengaduan.',
       color: 'from-blue-500 to-cyan-500'
     },
     {
       icon: Lock,
-      title: 'Keamanan Tinggi',
-      description: 'Menggunakan enkripsi tingkat militer dan validasi konsensus untuk melindungi integritas data pengaduan.',
+      title: 'Keamanan Tingkat Lanjut',
+      description: 'Blockchain menggunakan mekanisme konsensus terdistribusi dan enkripsi canggih yang setara dengan standar keamanan militer. Hal ini membuat peretasan atau upaya pengubahan data menjadi sangat sulit dan mahal, sehingga data pengaduan Anda benar-benar aman.',
       color: 'from-purple-500 to-pink-500'
     },
     {
       icon: Eye,
-      title: 'Transparansi Publik',
-      description: 'Semua transaksi dapat diverifikasi secara publik tanpa mengungkap identitas pribadi pelapor.',
+      title: 'Transparansi yang Dapat Diverifikasi Publik',
+      description: 'Semua transaksi (pengaduan, pembaruan status) yang terjadi di blockchain dapat dilihat dan diverifikasi oleh siapa saja. Namun, identitas pribadi pelapor tetap terjaga karena menggunakan alamat dompet digital yang bersifat pseudonim, memberikan transparansi tanpa mengorbankan privasi.',
       color: 'from-green-500 to-emerald-500'
     },
     {
       icon: Zap,
-      title: 'Proses Otomatis',
-      description: 'Smart contract mengotomatisasi alur kerja pengaduan, mengurangi kemungkinan intervensi manual yang bias.',
+      title: 'Otomatisasi Proses dengan Smart Contract',
+      description: 'Smart contract adalah program yang berjalan di blockchain dan mengeksekusi tindakan secara otomatis ketika kondisi tertentu terpenuhi. Ini memungkinkan alur kerja pengaduan (mulai dari penerimaan, verifikasi, hingga pembaruan status) berjalan tanpa campur tangan manusia yang bisa bias, memastikan proses yang adil dan efisien.',
       color: 'from-orange-500 to-red-500'
     }
   ];
@@ -44,7 +44,7 @@ const About: React.FC = () => {
             Mengapa Blockchain untuk Pengaduan?
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Teknologi blockchain memberikan solusi revolusioner untuk masalah transparansi dan akuntabilitas dalam sistem pengaduan pemerintah.
+            Teknologi blockchain menawarkan fondasi yang kuat untuk membangun sistem pengaduan pemerintah yang lebih dapat dipercaya, transparan, dan efisien, mengatasi banyak kelemahan sistem konvensional.
           </p>
         </motion.div>
 
@@ -56,15 +56,15 @@ const About: React.FC = () => {
             viewport={{ once: true }}
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              Masalah Sistem Pengaduan Tradisional
+              Permasalahan dalam Sistem Pengaduan Tradisional
             </h3>
             <div className="space-y-4">
               {[
-                'Data dapat dimanipulasi atau dihapus oleh pihak berkepentingan',
-                'Kurangnya transparansi dalam proses penanganan',
-                'Risiko korupsi dan nepotisme dalam pengambilan keputusan',
-                'Sulit melacak progres pengaduan secara real-time',
-                'Kepercayaan publik yang rendah terhadap sistem'
+                'Data mudah dimanipulasi atau bahkan dihapus karena terpusat pada satu entitas.',
+                'Proses penanganan yang seringkali tertutup, sehingga publik sulit memantau status dan perkembangannya.',
+                'Rentan terhadap praktik korupsi, nepotisme, atau perlakuan tidak adil karena kurangnya pengawasan publik yang independen.',
+                'Sulit untuk melakukan audit dan verifikasi independen terhadap seluruh proses penanganan pengaduan.',
+                'Rendahnya tingkat kepercayaan masyarakat terhadap keadilan dan efektivitas sistem pengaduan yang ada.'
               ].map((problem, index) => (
                 <motion.div
                   key={index}
@@ -75,7 +75,7 @@ const About: React.FC = () => {
                   viewport={{ once: true }}
                 >
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-600">{problem}</p>
+                  <p className="text-gray-600"><strong>{problem.split(' - ')[0]}</strong> {problem.split(' - ')[1] || ''}</p>
                 </motion.div>
               ))}
             </div>
@@ -88,15 +88,15 @@ const About: React.FC = () => {
             viewport={{ once: true }}
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              Solusi dengan VoxChain
+              Solusi yang Ditawarkan oleh VoxChain Berbasis Blockchain
             </h3>
             <div className="space-y-4">
               {[
-                'Immutable records - data tidak dapat diubah setelah dicatat',
-                'Transparansi penuh dengan audit trail yang dapat diverifikasi',
-                'Desentralisasi menghilangkan single point of failure',
-                'Real-time tracking dengan notifikasi otomatis',
-                'Kepercayaan publik melalui verifikasi independen'
+                'Data yang Tidak Dapat Diubah (Immutable): Setiap pengaduan dan pembaruannya dicatat secara permanen di blockchain, tidak bisa diubah atau dihapus, memastikan keaslian dan integritas.',
+                'Transparansi Penuh & Audit Trail: Seluruh riwayat pengaduan dapat dilihat dan diverifikasi publik. Sistem blockchain mencatat setiap langkah, menciptakan jejak audit yang lengkap dan terpercaya.',
+                'Desentralisasi untuk Keandalan: Data tidak disimpan di satu server, melainkan didistribusi ke banyak komputer. Ini menghilangkan satu titik kegagalan (single point of failure) dan membuatnya tahan terhadap serangan atau manipulasi.',
+                'Pelacakan Real-time & Efisiensi: Dengan smart contract, status pengaduan dapat diperbarui secara otomatis dan cepat. Pengguna dan publik dapat memantau progres secara langsung.',
+                'Membangun Kepercayaan Publik: Dengan adanya transparansi, keamanan, dan akuntabilitas yang inheren pada blockchain, masyarakat dapat lebih yakin bahwa pengaduan mereka ditangani secara adil dan transparan.'
               ].map((solution, index) => (
                 <motion.div
                   key={index}
@@ -107,7 +107,7 @@ const About: React.FC = () => {
                   viewport={{ once: true }}
                 >
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-600">{solution}</p>
+                  <p className="text-gray-600"><strong>{solution.split(': ')[0]}:</strong> {solution.split(': ')[1]}</p>
                 </motion.div>
               ))}
             </div>

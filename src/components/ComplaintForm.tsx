@@ -266,7 +266,12 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
           {complaints.length > 0 ? (
             <div className="grid gap-6">
               {complaints.map((complaint, index) => {
-                const statusInfo = statusMap[complaint.status] || statusMap['0'];
+                // Map status properly - complaint.status is now the raw blockchain status
+                const statusInfo = statusMap[complaint.status] || { 
+                  label: `Status ${complaint.status}`, 
+                  color: 'bg-gray-100 text-gray-800', 
+                  icon: AlertCircle 
+                };
                 const StatusIcon = statusInfo.icon;
                 
                 return (
@@ -299,6 +304,17 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4" />
                         <span>{complaint.timestamp}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Real-time status indicator */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Status ID: {complaint.status}</span>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span>Live dari Blockchain</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

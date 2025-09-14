@@ -1,32 +1,32 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Users, BarChart3, Bell } from 'lucide-react';
+import { FileText, Users, BarChart3, Shield } from 'lucide-react';
 
 const Features: React.FC = () => {
   const processSteps = [
     {
       number: '01',
       title: 'Buat Pengaduan',
-      description: 'Tulis pengaduan Anda dan submit melalui wallet blockchain',
+      description: 'Tulis pengaduan Anda dan submit melalui wallet blockchain.',
       icon: FileText
     },
     {
       number: '02',
-      title: 'Verifikasi Otomatis',
-      description: 'Smart contract memverifikasi dan mencatat pengaduan ke blockchain',
+      title: 'Verifikasi & Proses',
+      description: 'Pemerintah meninjau dan memverifikasi pengaduan yang masuk.',
       icon: Users
     },
     {
       number: '03',
-      title: 'Tracking Real-time',
-      description: 'Pantau progres penanganan pengaduan secara transparan',
+      title: 'Pembaruan Status',
+      description: 'Pemerintah memperbarui status pengaduan (Diverifikasi, Diproses, Ditindaklanjuti, Selesai, Ditolak).',
       icon: BarChart3
     },
     {
       number: '04',
-      title: 'Notifikasi Update',
-      description: 'Terima update otomatis setiap ada perubahan status',
-      icon: Bell
+      title: 'Transparansi Publik',
+      description: 'Publik dapat memantau status setiap pengaduan secara transparan.',
+      icon: Shield
     }
   ];
 
