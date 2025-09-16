@@ -1,31 +1,31 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Users, BarChart3, Shield } from 'lucide-react';
+import { FileText, Users, Sparkles, Shield } from 'lucide-react';
 
 const Features: React.FC = () => {
   const processSteps = [
     {
       number: '01',
       title: 'Buat Pengaduan',
-      description: 'Tulis pengaduan Anda dan submit melalui wallet blockchain.',
+      description: 'Sampaikan keluhan Anda secara anonim atau terverifikasi. Setiap pengaduan dicatat secara permanen di blockchain.',
       icon: FileText
     },
     {
       number: '02',
-      title: 'Verifikasi & Proses',
-      description: 'Pemerintah meninjau dan memverifikasi pengaduan yang masuk.',
+      title: 'Verifikasi & Tindak Lanjut',
+      description: 'Pemerintah memverifikasi keabsahan pengaduan dan menambahkan deskripsi tindak lanjut secara on-chain.',
       icon: Users
     },
     {
       number: '03',
-      title: 'Pembaruan Status',
-      description: 'Pemerintah memperbarui status pengaduan (Diverifikasi, Diproses, Ditindaklanjuti, Selesai, Ditolak).',
-      icon: BarChart3
+      title: 'Perbarui Status',
+      description: 'Pemerintah dapat mengubah status pengaduan menjadi "Diproses", "Selesai", atau "Ditolak" untuk melacak perkembangannya.',
+      icon: Sparkles
     },
     {
       number: '04',
-      title: 'Transparansi Publik',
-      description: 'Publik dapat memantau status setiap pengaduan secara transparan.',
+      title: 'Transparansi Penuh',
+      description: 'Setiap tahapan dan riwayat pengaduan, termasuk tindak lanjut, dapat diaudit dan dilihat oleh publik secara transparan.',
       icon: Shield
     }
   ];

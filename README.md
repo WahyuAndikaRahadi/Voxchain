@@ -26,7 +26,9 @@ VoxChain mengimplementasikan alur kerja yang sederhana namun didukung oleh kekua
    Masyarakat menulis dan mengirimkan pengaduan melalui dompet digital mereka. Transaksi ini dicatat secara permanen di blockchain.
 
 2. **Verifikasi & Pemrosesan**  
-   Pihak berwenang (administrator kontrak) meninjau semua pengaduan yang masuk, kemudian memulai proses penanganan.
+   Pihak berwenang (administrator kontrak) meninjau semua pengaduan yang masuk, kemudian memulai proses penanganan,Setelah meninjau, mereka dapat menambahkan detail tindak lanjut yang relevan ke dalam catatan pengaduan. Informasi ini juga tercatat secara permanen di blockchain.
+
+
 
 3. **Pembaruan Status**  
    Setelah diverifikasi, status pengaduan diperbarui menjadi:  

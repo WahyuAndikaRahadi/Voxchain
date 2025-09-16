@@ -11,12 +11,18 @@ import Features from './components/Features';
 import ComplaintForm from './components/ComplaintForm';
 import Footer from './components/Footer';
 
+// Definisikan ulang interface Complaint agar sesuai dengan struct Solidity
 interface Complaint {
   id: string;
+  judul: string;
   deskripsi: string;
+  kategori: string;
+  lokasi: string;
+  tanggalKejadian: string;
   pengirim: string;
-  timestamp: string;
+  timestampPengiriman: string;
   status: string;
+  tindakLanjutPemerintah: string;
 }
 
 const App: React.FC = () => {
@@ -30,7 +36,7 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [contractOwner, setContractOwner] = useState('');
 
-  // Refs for scrolling
+  // Refs for scrolling (tidak berubah)
   const sectionRefs = {
     beranda: useRef<HTMLDivElement>(null),
     tentang: useRef<HTMLDivElement>(null),
@@ -38,17 +44,15 @@ const App: React.FC = () => {
     pengaduan: useRef<HTMLDivElement>(null),
   };
 
-  // Status mapping consistent with blockchain contract
+  // Status mapping konsisten dengan smart contract
   const statusMap: { [key: string]: string } = {
-    '0': 'Terkirim',          // Sent
-    '1': 'Diverifikasi',      // Verified
-    '2': 'Diproses',          // Processing
-    '3': 'Ditindaklanjuti',   // Under Action
-    '4': 'Selesai',           // Completed
-    '5': 'Ditolak'            // Rejected
+    '0': 'Terkirim',
+    '1': 'Diverifikasi',
+    '2': 'Diproses',
+    '3': 'Selesai',
   };
 
-  // Scroll to section function
+  // Scroll to section function (tidak berubah)
   const scrollToSection = (section: string) => {
     const element = document.getElementById(section);
     if (element) {
@@ -67,7 +71,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Connect wallet
+  // Connect wallet (tidak berubah)
   const connectWallet = async () => {
     try {
       if (typeof window !== 'undefined' && (window as any).ethereum) {
@@ -100,14 +104,15 @@ const App: React.FC = () => {
   };
 
   // Submit complaint
-  const submitComplaint = async (description: string) => {
+  // Mengubah parameter agar sesuai dengan fungsi buatPengaduan di smart contract
+  const submitComplaint = async (judul: string, deskripsi: string, kategori: string, lokasi: string, tanggalKejadian: number) => {
     if (!signer) {
       setErrorMessage('Please connect your wallet first.');
       return;
     }
 
-    if (!description.trim()) {
-      setErrorMessage('Complaint description cannot be empty.');
+    if (!judul.trim() || !deskripsi.trim() || !kategori.trim() || !lokasi.trim() || !tanggalKejadian) {
+      setErrorMessage('Semua field pengaduan harus diisi.');
       return;
     }
 
@@ -116,32 +121,28 @@ const App: React.FC = () => {
       setErrorMessage('');
       
       const contract = getContract(signer);
-      const tx = await contract.buatPengaduan(description);
+      const tx = await contract.buatPengaduan(judul, deskripsi, kategori, lokasi, tanggalKejadian);
       await tx.wait();
       
       fetchComplaints();
     } catch (error) {
       console.error('Failed to submit complaint:', error);
-      setErrorMessage('Failed to submit complaint. Please ensure you have sufficient balance.');
+      setErrorMessage('Gagal mengirim pengaduan. Pastikan Anda memiliki saldo yang cukup.');
     } finally {
       setIsLoading(false);
     }
   };
 
   // Change complaint status (Owner only)
-  const changeComplaintStatus = async (complaintId: string, newStatus: string) => {
+  // Menggunakan tipe number untuk ID dan status sesuai dengan solidity
+  const changeComplaintStatus = async (complaintId: number, newStatus: number) => {
     if (!signer) {
       setErrorMessage('Please connect your wallet first.');
       return;
     }
 
-    if (!complaintId) {
-      setErrorMessage('Please enter complaint ID.');
-      return;
-    }
-
     if (walletAddress.toLowerCase() !== contractOwner.toLowerCase()) {
-      setErrorMessage('You are not the contract owner.');
+      setErrorMessage('Anda bukan pemilik kontrak.');
       return;
     }
 
@@ -150,22 +151,52 @@ const App: React.FC = () => {
       setErrorMessage('');
       
       const contract = getContract(signer);
-      const tx = await contract.ubahStatus(complaintId, parseInt(newStatus, 10));
+      const tx = await contract.ubahStatus(complaintId, newStatus);
       await tx.wait();
       
       fetchComplaints();
     } catch (error) {
       console.error('Failed to change status:', error);
-      setErrorMessage('Failed to change status. Please ensure the complaint ID is correct and you are the owner.');
+      setErrorMessage('Gagal mengubah status. Pastikan ID pengaduan benar.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Add government follow-up (Owner only)
+  // Fungsi baru untuk menambahkan tindak lanjut
+  const addGovernmentFollowUp = async (complaintId: number, tindakLanjut: string) => {
+    if (!signer || !tindakLanjut.trim()) {
+      setErrorMessage('Mohon hubungkan wallet dan isi deskripsi tindak lanjut.');
+      return;
+    }
+
+    if (walletAddress.toLowerCase() !== contractOwner.toLowerCase()) {
+      setErrorMessage('Anda bukan pemilik kontrak.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMessage('');
+      
+      const contract = getContract(signer);
+      const tx = await contract.tambahTindakLanjut(complaintId, tindakLanjut);
+      await tx.wait();
+
+      fetchComplaints();
+    } catch (error) {
+      console.error('Failed to add follow-up:', error);
+      setErrorMessage('Gagal menambahkan tindak lanjut.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   // Fetch complaints
   const fetchComplaints = async () => {
     try {
-      // Use existing provider or create new one for read operations
       let readOnlyProvider = provider;
       if (!readOnlyProvider && typeof window !== 'undefined' && (window as any).ethereum) {
         readOnlyProvider = new ethers.BrowserProvider((window as any).ethereum);
@@ -179,27 +210,23 @@ const App: React.FC = () => {
       const readOnlyContract = getContractReadOnly(readOnlyProvider);
       
       const fetchedComplaints: Complaint[] = [];
-      
-      // Fetch complaints with better error handling
-      for (let i = 0; i < 100; i++) {
-        try {
-          const complaint = await readOnlyContract.daftarPengaduan(i);
-          
-          // Check if complaint exists (non-zero address indicates valid complaint)
-          if (complaint.pengirim !== "0x0000000000000000000000000000000000000000") {
-            fetchedComplaints.push({
-              id: complaint.id.toString(),
-              deskripsi: complaint.deskripsi,
-              pengirim: complaint.pengirim,
-              timestamp: new Date(Number(complaint.timestamp) * 1000).toLocaleString(),
-              // Ensure proper status mapping with fallback
-              status: complaint.status.toString()
-            });
-          }
-        } catch (error) {
-          // Break loop when we reach non-existent complaints
-          break;
-        }
+      const totalPengaduan = await readOnlyContract.getTotalPengaduan();
+
+      for (let i = 1; i <= Number(totalPengaduan); i++) {
+        const complaint = await readOnlyContract.getPengaduan(i);
+        
+        fetchedComplaints.push({
+          id: complaint.id.toString(),
+          judul: complaint.judul,
+          deskripsi: complaint.deskripsi,
+          kategori: complaint.kategori,
+          lokasi: complaint.lokasi,
+          tanggalKejadian: new Date(Number(complaint.tanggalKejadian) * 1000).toLocaleString(),
+          pengirim: complaint.pengirim,
+          timestampPengiriman: new Date(Number(complaint.timestampPengiriman) * 1000).toLocaleString(),
+          status: complaint.status.toString(),
+          tindakLanjutPemerintah: complaint.tindakLanjutPemerintah,
+        });
       }
       
       setComplaints(fetchedComplaints);
@@ -209,7 +236,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Set up blockchain event listeners for real-time updates
+  // Set up blockchain event listeners for real-time updates (tidak berubah)
   useEffect(() => {
     if (!provider) return;
 
@@ -217,25 +244,18 @@ const App: React.FC = () => {
       try {
         const contract = getContractReadOnly(provider);
         
-        // Listen for new complaints
-        const complaintFilter = contract.filters.PengaduanBaru?.();
-        if (complaintFilter) {
-          contract.on(complaintFilter, (id, pengirim, deskripsi, timestamp) => {
-            console.log('New complaint detected:', { id, pengirim, deskripsi, timestamp });
-            fetchComplaints(); // Refresh complaints list
-          });
-        }
+        contract.on('PengaduanBaru', () => {
+          fetchComplaints();
+        });
         
-        // Listen for status changes
-        const statusFilter = contract.filters.StatusDiubah?.();
-        if (statusFilter) {
-          contract.on(statusFilter, (id, statusBaru) => {
-            console.log('Status change detected:', { id, statusBaru });
-            fetchComplaints(); // Refresh complaints list
-          });
-        }
+        contract.on('StatusDiubah', () => {
+          fetchComplaints();
+        });
+
+        contract.on('TindakLanjutDitambahkan', () => {
+          fetchComplaints();
+        });
         
-        // Fallback: Poll for updates every 10 seconds
         const pollInterval = setInterval(() => {
           fetchComplaints();
         }, 10000);
@@ -256,7 +276,7 @@ const App: React.FC = () => {
     };
   }, [provider]);
 
-  // Enhanced fetch with retry mechanism
+  // Enhanced fetch with retry mechanism (tidak berubah)
   const fetchComplaintsWithRetry = async (retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -267,21 +287,19 @@ const App: React.FC = () => {
         if (i === retries - 1) {
           setErrorMessage('Gagal memuat pengaduan setelah beberapa percobaan. Silakan refresh halaman.');
         }
-        // Wait before retry
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
   };
 
-  // Check if user is owner
+  // Check if user is owner (tidak berubah)
   const isOwner = walletAddress && contractOwner && walletAddress.toLowerCase() === contractOwner.toLowerCase();
 
-  // Initialize
+  // Initialize and refresh on status change
   useEffect(() => {
     fetchComplaintsWithRetry();
   }, []);
 
-  // Refresh complaints when wallet connects
   useEffect(() => {
     if (status === 'Connected') {
       fetchComplaintsWithRetry();
@@ -313,6 +331,8 @@ const App: React.FC = () => {
           errorMessage={errorMessage}
           isOwner={isOwner}
           changeComplaintStatus={changeComplaintStatus}
+          addGovernmentFollowUp={addGovernmentFollowUp}
+          fetchComplaints={fetchComplaints}
         />
       </main>
       
