@@ -653,7 +653,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                           disabled={isLoading}
                         >
                           <MessageSquare className="h-5 w-5" />
-                          <span className="font-medium">{comments.length} Komentar</span>
+                          <span className="font-medium">Komentar</span>
                         </motion.button>
                         {canCancel && (
                           <motion.button
