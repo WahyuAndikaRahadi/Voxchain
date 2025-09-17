@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, Sparkles, XCircle, ArrowUpWideNarrow, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter } from 'lucide-react';
+import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, XCircle, ArrowUpWideNarrow, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter, Megaphone } from 'lucide-react';
 
 interface ComplaintFormProps {
   provider: any;
@@ -630,7 +630,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                     {complaint.tindakLanjutPemerintah && (
                       <div className="bg-gray-50 border-l-4 border-blue-500 p-4 mt-4 rounded-lg">
                         <div className="flex items-center mb-2">
-                          <Sparkles className="h-5 w-5 text-blue-500 mr-2" />
+                          <Megaphone className="h-5 w-5 text-blue-500 mr-2" />
                           <h5 className="font-semibold text-blue-800">Respon Pemerintah : </h5>
                         </div>
                         <p className="text-gray-700 italic">{complaint.tindakLanjutPemerintah}</p>
