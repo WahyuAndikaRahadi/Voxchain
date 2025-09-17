@@ -1,12 +1,63 @@
 import { ethers } from 'ethers';
 
 // Placeholder contract configuration - replace with your actual contract details
-export const CONTRACT_ADDRESS = "0x7fEB209d6B8E5988d732ba31F496032859C38243" // Your contract address
+export const CONTRACT_ADDRESS = "0x476A20f56e6FfCA3f87014FCe1cafc77D70F325c" // Your contract address
 export const CONTRACT_ABI =  [
     {
       "inputs": [],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminDihapus",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminDitambahkan",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pengirim",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "isi",
+          "type": "string"
+        }
+      ],
+      "name": "KomentarDitambahkan",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -31,6 +82,25 @@ export const CONTRACT_ABI =  [
         }
       ],
       "name": "PengaduanBaru",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pembatal",
+          "type": "address"
+        }
+      ],
+      "name": "PengaduanDibatalkan",
       "type": "event"
     },
     {
@@ -72,6 +142,70 @@ export const CONTRACT_ABI =  [
       "type": "event"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pengirim",
+          "type": "address"
+        }
+      ],
+      "name": "UpvoteDitambahkan",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "addAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "admins",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "batalkanPengaduan",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "string",
@@ -102,6 +236,40 @@ export const CONTRACT_ABI =  [
       "name": "buatPengaduan",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "daftarKomentar",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "pengirim",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "isi",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -163,6 +331,11 @@ export const CONTRACT_ABI =  [
           "internalType": "string",
           "name": "tindakLanjutPemerintah",
           "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "upvoteCount",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -176,6 +349,42 @@ export const CONTRACT_ABI =  [
           "internalType": "uint256[]",
           "name": "",
           "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "getKomentarPengaduan",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "pengirim",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "isi",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct VoxChain.Komentar[]",
+          "name": "",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -240,6 +449,49 @@ export const CONTRACT_ABI =  [
           "internalType": "string",
           "name": "tindakLanjutPemerintah",
           "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "upvoteCount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_kategori",
+          "type": "string"
+        }
+      ],
+      "name": "getPengaduanIdsByKategori",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "_status",
+          "type": "uint8"
+        }
+      ],
+      "name": "getPengaduanIdsByStatus",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
         }
       ],
       "stateMutability": "view",
@@ -274,6 +526,37 @@ export const CONTRACT_ABI =  [
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "_admin",
+          "type": "address"
+        }
+      ],
+      "name": "removeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_isi",
+          "type": "string"
+        }
+      ],
+      "name": "tambahKomentar",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_id",
           "type": "uint256"
@@ -303,6 +586,19 @@ export const CONTRACT_ABI =  [
         }
       ],
       "name": "ubahStatus",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "upvotePengaduan",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
