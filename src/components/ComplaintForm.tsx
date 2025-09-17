@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, Sparkles, XCircle, ThumbsUp, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter } from 'lucide-react';
+import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, Sparkles, XCircle, ArrowUpWideNarrow, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter } from 'lucide-react';
 
 interface ComplaintFormProps {
   provider: any;
@@ -83,7 +83,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
   const [showCancelModal, setShowCancelModal] = useState(false);
   
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
-  // State baru untuk filter dan pencarian
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -179,9 +178,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
     }
   };
   
-  // Hook useMemo untuk mengurutkan dan memfilter daftar pengaduan secara efisien
   const sortedAndFilteredComplaints = useMemo(() => {
-    // 1. Filter berdasarkan pencarian dan kategori
     let filtered = complaints.filter(complaint => {
       const matchesSearch = complaint.judul.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             complaint.deskripsi.toLowerCase().includes(searchTerm.toLowerCase());
@@ -189,7 +186,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
       return matchesSearch && matchesCategory;
     });
 
-    // 2. Sortir berdasarkan opsi yang dipilih
     if (sortBy === 'popular') {
       return filtered.sort((a, b) => b.upvoteCount - a.upvoteCount);
     } else {
@@ -335,14 +331,17 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                     <label htmlFor="kategori" className="block text-sm font-medium text-gray-700 mb-2">
                       Kategori
                     </label>
-                    <input
-                      type="text"
+                    <select
                       id="kategori"
                       className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                      placeholder="Contoh: Infrastruktur"
                       value={kategori}
                       onChange={(e) => setKategori(e.target.value)}
-                    />
+                    >
+                      <option value="" disabled>Pilih Kategori</option>
+                      {KATEGORI_PENGADUAN.map((cat, index) => (
+                        <option key={index} value={cat}>{cat}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label htmlFor="lokasi" className="block text-sm font-medium text-gray-700 mb-2">
@@ -531,7 +530,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <h3 className="text-2xl font-bold text-gray-900 text-center md:text-left mb-4 md:mb-0">Daftar Pengaduan Publik</h3>
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full md:w-auto">
-              {/* Search input */}
               <div className="relative flex-grow">
                 <input
                   type="text"
@@ -542,7 +540,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
               </div>
-              {/* Category Filter */}
               <div className="relative">
                 <select
                   className="w-full p-3 pl-10 border border-gray-300 rounded-xl appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
@@ -559,7 +556,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                   <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                 </div>
               </div>
-              {/* Sort buttons */}
               <div className="flex justify-center space-x-2">
                 <button
                   onClick={() => setSortBy('newest')}
@@ -648,7 +644,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                           className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors"
                           disabled={isLoading}
                         >
-                          <ThumbsUp className="h-5 w-5" />
+                          <ArrowUpWideNarrow className="h-5 w-5" />
                           <span className="font-medium">{complaint.upvoteCount}</span>
                         </motion.button>
                         <motion.button
