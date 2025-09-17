@@ -438,7 +438,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                 </div>
 
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8 border border-purple-200">
-                  <h4 className="text-xl font-bold text-purple-900 mb-4 text-center">Tambah Tindak Lanjut Pemerintah</h4>
+                  <h4 className="text-xl font-bold text-purple-900 mb-4 text-center">Tambah Respon Tindak Lanjut Pemerintah</h4>
                   <div className="space-y-4">
                     <input
                       type="number"
@@ -448,7 +448,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       onChange={(e) => setSelectedComplaintId(e.target.value)}
                     />
                     <textarea
-                      placeholder="Deskripsi tindak lanjut dari pemerintah"
+                      placeholder="Deskripsi respon tindak lanjut dari pemerintah"
                       className="w-full p-4 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                       rows={3}
                       value={tindakLanjut}
@@ -461,7 +461,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      Tambah Tindak Lanjut
+                      Tambah Respon Tindak Lanjut
                     </motion.button>
                   </div>
                 </div>
@@ -631,7 +631,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       <div className="bg-gray-50 border-l-4 border-blue-500 p-4 mt-4 rounded-lg">
                         <div className="flex items-center mb-2">
                           <Sparkles className="h-5 w-5 text-blue-500 mr-2" />
-                          <h5 className="font-semibold text-blue-800">Tindak Lanjut Pemerintah:</h5>
+                          <h5 className="font-semibold text-blue-800">Respon Pemerintah : </h5>
                         </div>
                         <p className="text-gray-700 italic">{complaint.tindakLanjutPemerintah}</p>
                       </div>
