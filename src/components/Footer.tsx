@@ -90,7 +90,7 @@ const Footer: React.FC = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-400 text-sm mb-4 md:mb-0 text-center w-full md:w-auto"> {/* Menengahkan teks hak cipta */}
-              © 2025 VoxChain Made By Wahyu Andika Rahadi.
+              © 2025 VoxChain dibuat oleh Wahyu Andika Rahadi.
             </div>
           </div>
         </motion.div>
@@ -105,7 +105,7 @@ const Footer: React.FC = () => {
         >
           <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-xs font-medium">
             <Shield className="h-3 w-3 mr-2" />
-            Secured by Blockchain Technology
+            Dilindungi Oleh Teknologi Blockchain
           </div>
         </motion.div>
       </div>

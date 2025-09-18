@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, XCircle, ArrowUpWideNarrow, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter, Megaphone } from 'lucide-react';
+import { Wallet, Send, AlertCircle, CheckCircle, Clock, FileText, User, Calendar, Tag, MapPin, XCircle, ArrowUpWideNarrow, MessageSquare, UserPlus, UserMinus, Plus, TrendingUp, Clock as ClockIcon, Search, ListFilter, Megaphone, Edit, Zap, AlertTriangle, Coins } from 'lucide-react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const MySwal = withReactContent(Swal);
 
 interface ComplaintFormProps {
   provider: any;
@@ -24,6 +28,10 @@ interface ComplaintFormProps {
   addAdmin: (adminAddress: string) => void;
   removeAdmin: (adminAddress: string) => void;
   cancelComplaint: (id: number) => void;
+  vocaBalance: string;
+  approveTokens: (amount: number) => void;
+  boostComplaint: (id: number) => void;
+  updateComplaint: (id: number, judul: string, deskripsi: string, kategori: string, lokasi: string, tanggalKejadian: number) => void;
 }
 
 const KATEGORI_PENGADUAN = [
@@ -65,6 +73,10 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
   addAdmin,
   removeAdmin,
   cancelComplaint,
+  vocaBalance,
+  approveTokens,
+  boostComplaint,
+  updateComplaint,
 }) => {
   const [judul, setJudul] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
@@ -74,13 +86,9 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
   const [selectedComplaintId, setSelectedComplaintId] = useState('');
   const [newStatus, setNewStatus] = useState('0');
   const [tindakLanjut, setTindakLanjut] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [currentComplaintId, setCurrentComplaintId] = useState<number | null>(null);
-  const [newComment, setNewComment] = useState('');
   const [adminAddressToAdd, setAdminAddressToAdd] = useState('');
   const [adminAddressToRemove, setAdminAddressToRemove] = useState('');
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [updateForm, setUpdateForm] = useState({ id: 0, judul: '', deskripsi: '', kategori: '', lokasi: '', tanggal: '' });
   
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,10 +101,31 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
     '3': { label: 'Selesai', color: 'bg-green-100 text-green-800', icon: CheckCircle },
     '4': { label: 'Ditolak', color: 'bg-red-100 text-red-800', icon: XCircle },
     '5': { label: 'Diabaikan', color: 'bg-zinc-100 text-zinc-800', icon: AlertCircle },
+    '6': { label: 'Pelanggaran', color: 'bg-pink-100 text-pink-800', icon: AlertCircle },
   };
+
+  useEffect(() => {
+    if (errorMessage) {
+      MySwal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true,
+      });
+    }
+  }, [errorMessage]);
 
   const handleSubmitComplaint = async () => {
     if (!judul.trim() || !deskripsi.trim() || !kategori.trim() || !lokasi.trim() || !tanggal.trim()) {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon lengkapi semua bidang.',
+      });
       return;
     }
     const timestamp = Math.floor(new Date(tanggal).getTime() / 1000);
@@ -106,8 +135,34 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
     setKategori('');
     setLokasi('');
     setTanggal('');
-    setShowSuccessModal(true);
-    setTimeout(() => setShowSuccessModal(false), 3000);
+    MySwal.fire({
+      icon: 'success',
+      title: 'Berhasil!',
+      text: 'Pengaduan Anda telah tercatat di blockchain.',
+      showConfirmButton: false,
+      timer: 3000,
+    });
+  };
+  
+  const handleUpdateComplaint = async () => {
+    if (updateForm.id > 0 && updateForm.judul && updateForm.deskripsi && updateForm.kategori && updateForm.lokasi && updateForm.tanggal) {
+      const timestamp = Math.floor(new Date(updateForm.tanggal).getTime() / 1000);
+      await updateComplaint(updateForm.id, updateForm.judul, updateForm.deskripsi, updateForm.kategori, updateForm.lokasi, timestamp);
+      setUpdateForm({ id: 0, judul: '', deskripsi: '', kategori: '', lokasi: '', tanggal: '' });
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Pengaduan berhasil diperbarui.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon lengkapi semua bidang.',
+      });
+    }
   };
 
   const handleStatusChange = async () => {
@@ -115,6 +170,19 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
       await changeComplaintStatus(Number(selectedComplaintId), Number(newStatus));
       setSelectedComplaintId('');
       setNewStatus('0');
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Status pengaduan berhasil diubah.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon isi ID pengaduan dan pilih status baru.',
+      });
     }
   };
 
@@ -123,38 +191,182 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
       await addGovernmentFollowUp(Number(selectedComplaintId), tindakLanjut);
       setSelectedComplaintId('');
       setTindakLanjut('');
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Tindak lanjut berhasil ditambahkan.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon isi ID pengaduan dan deskripsi tindak lanjut.',
+      });
     }
   };
 
   const handleUpvote = async (id: number) => {
     if (signer) {
       await upvoteComplaint(id);
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Upvote berhasil.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Anda harus terhubung dengan wallet untuk melakukan upvote.',
+      });
     }
-  };
-
-  const handleOpenCommentModal = (id: number) => {
-    setCurrentComplaintId(id);
-    fetchComments(id);
-    setShowCommentModal(true);
   };
   
-  const handleCloseCommentModal = () => {
-    setShowCommentModal(false);
-    setComments([]);
-    setCurrentComplaintId(null);
+  const handleBoost = async (id: number) => {
+    if (signer) {
+      await boostComplaint(id);
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Pengaduan berhasil di-boost.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Anda harus terhubung dengan wallet untuk melakukan boost.',
+      });
+    }
   };
 
-  const handleAddComment = async () => {
-    if (currentComplaintId !== null && newComment.trim()) {
-      await addComment(currentComplaintId, newComment);
-      setNewComment('');
+  const handleApprove = async () => {
+    if (signer) {
+      await approveTokens(100);
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Token berhasil di-approve.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
     }
+  };
+
+  const handleOpenCommentModal = async (id: number) => {
+    await fetchComments(id);
+    MySwal.fire({
+      title: 'Komentar',
+      html: (
+        <div>
+          <div className="space-y-4 max-h-80 overflow-y-auto mb-4">
+            {comments.length > 0 ? (
+              comments.map((comment, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold text-gray-800 font-mono text-sm">{comment.pengirim.slice(0, 6)}...{comment.pengirim.slice(-4)}</span>
+                    <span className="text-xs text-gray-500">{new Date(Number(comment.timestamp) * 1000).toLocaleString('id-ID')}</span>
+                  </div>
+                  <p className="text-gray-700">{comment.isi}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center italic">Belum ada komentar.</p>
+            )}
+          </div>
+          <div className="flex items-center space-x-2 mt-4">
+            <input
+              id="newCommentInput"
+              type="text"
+              placeholder="Tambah komentar baru..."
+              className="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              id="addCommentButton"
+              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      ),
+      showConfirmButton: false,
+      showCloseButton: true,
+      didOpen: () => {
+        const addCommentButton = document.getElementById('addCommentButton');
+        addCommentButton?.addEventListener('click', async () => {
+          const newCommentInput = document.getElementById('newCommentInput') as HTMLInputElement;
+          const newCommentText = newCommentInput.value;
+          if (newCommentText.trim()) {
+            await addComment(id, newCommentText);
+            newCommentInput.value = '';
+            MySwal.update({
+              html: (
+                <div>
+                  <div className="space-y-4 max-h-80 overflow-y-auto mb-4">
+                    {comments.length > 0 ? (
+                      comments.map((comment, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-semibold text-gray-800 font-mono text-sm">{comment.pengirim.slice(0, 6)}...{comment.pengirim.slice(-4)}</span>
+                            <span className="text-xs text-gray-500">{new Date(Number(comment.timestamp) * 1000).toLocaleString('id-ID')}</span>
+                          </div>
+                          <p className="text-gray-700">{comment.isi}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center italic">Belum ada komentar.</p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2 mt-4">
+                    <input
+                      id="newCommentInput"
+                      type="text"
+                      placeholder="Tambah komentar baru..."
+                      className="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      id="addCommentButton"
+                      className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              ),
+            });
+          }
+        });
+      },
+    });
   };
 
   const handleAddAdmin = async () => {
     if (adminAddressToAdd) {
       await addAdmin(adminAddressToAdd);
       setAdminAddressToAdd('');
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Admin berhasil ditambahkan.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon isi alamat admin.',
+      });
     }
   };
 
@@ -162,20 +374,101 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
     if (adminAddressToRemove) {
       await removeAdmin(adminAddressToRemove);
       setAdminAddressToRemove('');
+      MySwal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Admin berhasil dihapus.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } else {
+      MySwal.fire({
+        icon: 'warning',
+        title: 'Peringatan',
+        text: 'Mohon isi alamat admin.',
+      });
     }
   };
   
   const handleCancelComplaint = async (id: number) => {
-    setCurrentComplaintId(id);
-    setShowCancelModal(true);
+    const result = await MySwal.fire({
+      icon: 'warning',
+      title: 'Konfirmasi Pembatalan',
+      text: 'Apakah Anda yakin ingin membatalkan pengaduan ini?',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Batalkan',
+      cancelButtonText: 'Tidak, Kembali',
+    });
+    
+    if (result.isConfirmed) {
+      await cancelComplaint(id);
+      MySwal.fire({
+        icon: 'success',
+        title: 'Dibatalkan!',
+        text: 'Pengaduan berhasil dibatalkan.',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
   
-  const confirmCancel = async () => {
-    if (currentComplaintId !== null) {
-      await cancelComplaint(currentComplaintId);
-      setShowCancelModal(false);
-      setCurrentComplaintId(null);
-    }
+  const handleOpenUpdateModal = (complaint: any) => {
+    const date = new Date(Number(complaint.tanggalKejadian) * 1000);
+    const formattedDate = date.toISOString().split('T')[0];
+    MySwal.fire({
+      title: 'Perbarui Pengaduan',
+      html: `
+        <div class="space-y-6 text-left">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Judul Pengaduan</label>
+            <input id="updateJudul" type="text" value="${complaint.judul}" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Deskripsi Pengaduan</label>
+            <textarea id="updateDeskripsi" rows="4" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none">${complaint.deskripsi}</textarea>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+              <select id="updateKategori" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                ${KATEGORI_PENGADUAN.map(cat => `<option value="${cat}" ${cat === complaint.kategori ? 'selected' : ''}>${cat}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Lokasi</label>
+              <input id="updateLokasi" type="text" value="${complaint.lokasi}" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kejadian</label>
+              <input id="updateTanggal" type="date" value="${formattedDate}" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Perbarui',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const judul = (document.getElementById('updateJudul') as HTMLInputElement).value;
+        const deskripsi = (document.getElementById('updateDeskripsi') as HTMLInputElement).value;
+        const kategori = (document.getElementById('updateKategori') as HTMLSelectElement).value;
+        const lokasi = (document.getElementById('updateLokasi') as HTMLInputElement).value;
+        const tanggal = (document.getElementById('updateTanggal') as HTMLInputElement).value;
+
+        if (!judul || !deskripsi || !kategori || !lokasi || !tanggal) {
+          Swal.showValidationMessage('Mohon lengkapi semua bidang');
+          return false;
+        }
+
+        const timestamp = Math.floor(new Date(tanggal).getTime() / 1000);
+        return { id: Number(complaint.id), judul, deskripsi, kategori, lokasi, tanggal: timestamp };
+      },
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await updateComplaint(result.value.id, result.value.judul, result.value.deskripsi, result.value.kategori, result.value.lokasi, result.value.tanggal);
+        MySwal.fire('Berhasil!', 'Pengaduan berhasil diperbarui.', 'success');
+      }
+    });
   };
   
   const sortedAndFilteredComplaints = useMemo(() => {
@@ -187,13 +480,9 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
     });
 
     if (sortBy === 'popular') {
-      return filtered.sort((a, b) => b.upvoteCount - a.upvoteCount);
+      return filtered.sort((a, b) => Number(b.upvoteCount) - Number(a.upvoteCount));
     } else {
-      return filtered.sort((a, b) => {
-        const dateA = new Date(a.timestampPengiriman).getTime();
-        const dateB = new Date(b.timestampPengiriman).getTime();
-        return dateB - dateA;
-      });
+      return filtered.sort((a, b) => Number(b.timestampPengiriman) - Number(a.timestampPengiriman));
     }
   }, [complaints, sortBy, searchTerm, selectedCategory]);
 
@@ -233,8 +522,8 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                 </span>
               </div>
             </div>
-
-            {walletAddress && (
+            
+            {walletAddress && !isOwner && !isAdmin && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -242,7 +531,33 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
               >
                 <p className="text-sm text-gray-600 mb-1">Alamat Wallet:</p>
                 <p className="font-mono text-sm text-gray-800 break-all">{walletAddress}</p>
+                <div className="mt-2 flex items-center justify-between space-x-2">
+                    <div className="flex items-center space-x-2">
+                        <Coins className="h-4 w-4 text-purple-600" />
+                        <p className="font-semibold text-sm text-purple-800">Saldo Voca: {vocaBalance} VOC</p>
+                    </div>
+                    <motion.button
+                        onClick={handleApprove}
+                        disabled={isLoading || !signer}
+                        className="px-3 py-1 text-xs bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        Setujui Izin Token
+                    </motion.button>
+                </div>
               </motion.div>
+            )}
+            
+            {walletAddress && (isOwner || isAdmin) && (
+                 <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-4 bg-white rounded-xl border border-gray-200"
+                 >
+                    <p className="text-sm text-gray-600 mb-1">Alamat Wallet:</p>
+                    <p className="font-mono text-sm text-gray-800 break-all">{walletAddress}</p>
+                 </motion.div>
             )}
 
             <motion.button
@@ -269,22 +584,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                 </span>
               )}
             </motion.button>
-
-            <AnimatePresence>
-              {errorMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl"
-                >
-                  <div className="flex items-center">
-                    <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                    <p className="text-red-700 text-sm">{errorMessage}</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </motion.div>
 
@@ -298,6 +597,9 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
           >
             <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
               <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Buat Pengaduan Baru</h3>
+              <p className="text-center text-sm text-gray-500 mb-6">
+                Pengaduan pertama gratis, pengaduan berikutnya membutuhkan 10 Voca Token.
+              </p>
               
               <div className="space-y-6">
                 <div>
@@ -369,7 +671,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                     />
                   </div>
                 </div>
-
+                
                 <motion.button
                   onClick={handleSubmitComplaint}
                   disabled={isLoading || !signer || !judul || !deskripsi || !kategori || !lokasi || !tanggal}
@@ -584,8 +886,14 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                   icon: AlertCircle 
                 };
                 const StatusIcon = statusInfo.icon;
+                const formattedDate = new Date(Number(complaint.tanggalKejadian) * 1000).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  });
                 
                 const canCancel = walletAddress && (walletAddress.toLowerCase() === complaint.pengirim.toLowerCase()) && complaint.status === '0';
+                const canUpdate = walletAddress && (walletAddress.toLowerCase() === complaint.pengirim.toLowerCase()) && complaint.status === '0';
                 
                 return (
                   <motion.div
@@ -597,7 +905,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                       <div className="flex items-center space-x-3 mb-2 md:mb-0">
-                        <span className="font-mono text-sm text-gray-600">ID: {complaint.id}</span>
+                        <span className="font-mono text-sm text-gray-600">ID: {Number(complaint.id)}</span>
                       </div>
                       <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                         <StatusIcon className="h-3 w-3 mr-1" />
@@ -606,24 +914,24 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                     </div>
 
                     <h4 className="text-lg font-bold text-gray-900 mb-2">{complaint.judul}</h4>
-                    <p className="text-gray-900 font-medium mb-4 leading-relaxed">{complaint.deskripsi}</p>
+                    <p className="text-gray-900 font-medium mb-4 leading-relaxed break-words">{complaint.deskripsi}</p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4" />
-                        <span className="font-mono text-xs">{complaint.pengirim.slice(0, 6)}...{complaint.pengirim.slice(-4)}</span>
+                        <User className="h-4 w-4 flex-shrink-0" />
+                        <span className="font-mono text-xs truncate">{complaint.pengirim.slice(0, 6)}...{complaint.pengirim.slice(-4)}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Tag className="h-4 w-4" />
-                        <span>{complaint.kategori}</span>
+                        <Tag className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{complaint.kategori}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{complaint.lokasi}</span>
+                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{complaint.lokasi}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{complaint.tanggalKejadian}</span>
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{formattedDate}</span>
                       </div>
                     </div>
 
@@ -637,15 +945,15 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <motion.button
                           onClick={() => handleUpvote(Number(complaint.id))}
                           className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors"
                           disabled={isLoading}
                         >
                           <ArrowUpWideNarrow className="h-5 w-5" />
-                          <span className="font-medium">{complaint.upvoteCount}</span>
+                          <span className="font-medium">{Number(complaint.upvoteCount)}</span>
                         </motion.button>
                         <motion.button
                           onClick={() => handleOpenCommentModal(Number(complaint.id))}
@@ -655,6 +963,26 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                           <MessageSquare className="h-5 w-5" />
                           <span className="font-medium">Komentar</span>
                         </motion.button>
+                        {walletAddress && (
+                          <motion.button
+                            onClick={() => handleBoost(Number(complaint.id))}
+                            className="flex items-center space-x-1 text-purple-500 hover:text-purple-700 transition-colors"
+                            disabled={isLoading}
+                          >
+                            <Zap className="h-5 w-5" />
+                            <span className="font-medium">Boost</span>
+                          </motion.button>
+                        )}
+                        {canUpdate && (
+                          <motion.button
+                            onClick={() => handleOpenUpdateModal(complaint)}
+                            className="flex items-center space-x-1 text-orange-500 hover:text-orange-700 transition-colors"
+                            disabled={isLoading}
+                          >
+                            <Edit className="h-5 w-5" />
+                            <span className="font-medium">Update</span>
+                          </motion.button>
+                        )}
                         {canCancel && (
                           <motion.button
                             onClick={() => handleCancelComplaint(Number(complaint.id))}
@@ -671,7 +999,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
                         <span>Live dari Blockchain</span>
                       </div>
                     </div>
-                    
                   </motion.div>
                 );
               })}
@@ -689,126 +1016,6 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({
           )}
         </motion.div>
       </div>
-
-      <AnimatePresence>
-        {showSuccessModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center"
-            >
-              <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Pengaduan Berhasil Dikirim!</h3>
-              <p className="text-gray-600">Pengaduan Anda telah tercatat di blockchain.</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCommentModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-lg mx-4"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Komentar</h3>
-                <button onClick={handleCloseCommentModal} className="text-gray-500 hover:text-gray-800 transition-colors">
-                  <XCircle className="h-6 w-6" />
-                </button>
-              </div>
-              <div className="space-y-4 max-h-80 overflow-y-auto mb-4">
-                {comments.length > 0 ? (
-                  comments.map((comment, index) => (
-                    <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-semibold text-gray-800 font-mono text-sm">{comment.pengirim.slice(0, 6)}...{comment.pengirim.slice(-4)}</span>
-                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
-                      </div>
-                      <p className="text-gray-700">{comment.isi}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center italic">Belum ada komentar.</p>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Tambah komentar baru..."
-                  className="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <motion.button
-                  onClick={handleAddComment}
-                  disabled={!newComment || isLoading}
-                  className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Plus className="h-5 w-5" />
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCancelModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center"
-            >
-              <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Konfirmasi Pembatalan</h3>
-              <p className="text-gray-600 mb-6">Apakah Anda yakin ingin membatalkan pengaduan ini?</p>
-              <div className="flex justify-center space-x-4">
-                <motion.button
-                  onClick={confirmCancel}
-                  className="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Ya, Batalkan
-                </motion.button>
-                <motion.button
-                  onClick={() => setShowCancelModal(false)}
-                  className="px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition-all"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Tidak, Kembali
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 };

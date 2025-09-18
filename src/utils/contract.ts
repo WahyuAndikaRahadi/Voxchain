@@ -1,25 +1,43 @@
-import { ethers } from 'ethers';
+import { ethers, Contract, Signer, Provider } from 'ethers';
 
-// Placeholder contract configuration - replace with your actual contract details
-export const CONTRACT_ADDRESS = "0x476A20f56e6FfCA3f87014FCe1cafc77D70F325c" // Your contract address
-export const CONTRACT_ABI =  [
+// Ganti dengan alamat kontrak VoxChain dan VocaToken Anda yang sebenarnya
+export const VOXCHAIN_CONTRACT_ADDRESS = "0xB214594B9452D384324bAdDBcBedf9aE95017850"; 
+export const VOCA_TOKEN_CONTRACT_ADDRESS = "0x6D92e9Af77B06f6f227101a6f4C70f739634882d"; // <--- GANTI INI DENGAN ALAMAT KONTRAK VOCA TOKEN ANDA
+
+// ABI untuk kontrak VoxChain
+export const VOXCHAIN_ABI = [
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_vocaTokenAddress",
+          "type": "address"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
     {
-      "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
           "internalType": "address",
-          "name": "admin",
+          "name": "owner",
           "type": "address"
         }
       ],
-      "name": "AdminDihapus",
-      "type": "event"
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
     },
     {
       "anonymous": false,
@@ -31,7 +49,20 @@ export const CONTRACT_ABI =  [
           "type": "address"
         }
       ],
-      "name": "AdminDitambahkan",
+      "name": "AdminAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminRemoved",
       "type": "event"
     },
     {
@@ -46,17 +77,17 @@ export const CONTRACT_ABI =  [
         {
           "indexed": true,
           "internalType": "address",
-          "name": "pengirim",
+          "name": "submitter",
           "type": "address"
         },
         {
           "indexed": false,
           "internalType": "string",
-          "name": "isi",
+          "name": "content",
           "type": "string"
         }
       ],
-      "name": "KomentarDitambahkan",
+      "name": "CommentAdded",
       "type": "event"
     },
     {
@@ -71,17 +102,67 @@ export const CONTRACT_ABI =  [
         {
           "indexed": true,
           "internalType": "address",
-          "name": "pengirim",
+          "name": "booster",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "upvotesAdded",
+          "type": "uint256"
+        }
+      ],
+      "name": "ComplaintBoosted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "canceller",
+          "type": "address"
+        }
+      ],
+      "name": "ComplaintCanceled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "submitter",
           "type": "address"
         },
         {
           "indexed": false,
           "internalType": "string",
-          "name": "judul",
+          "name": "title",
           "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
         }
       ],
-      "name": "PengaduanBaru",
+      "name": "ComplaintSubmitted",
       "type": "event"
     },
     {
@@ -96,11 +177,49 @@ export const CONTRACT_ABI =  [
         {
           "indexed": true,
           "internalType": "address",
-          "name": "pembatal",
+          "name": "updater",
           "type": "address"
         }
       ],
-      "name": "PengaduanDibatalkan",
+      "name": "ComplaintUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "followUp",
+          "type": "string"
+        }
+      ],
+      "name": "FollowUpAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
       "type": "event"
     },
     {
@@ -115,30 +234,11 @@ export const CONTRACT_ABI =  [
         {
           "indexed": false,
           "internalType": "uint8",
-          "name": "statusBaru",
+          "name": "newStatus",
           "type": "uint8"
         }
       ],
-      "name": "StatusDiubah",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "tindakLanjut",
-          "type": "string"
-        }
-      ],
-      "name": "TindakLanjutDitambahkan",
+      "name": "StatusChanged",
       "type": "event"
     },
     {
@@ -153,22 +253,115 @@ export const CONTRACT_ABI =  [
         {
           "indexed": true,
           "internalType": "address",
-          "name": "pengirim",
+          "name": "upvoter",
           "type": "address"
         }
       ],
-      "name": "UpvoteDitambahkan",
+      "name": "Upvoted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Violation",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "VocaDeducted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "VocaRewarded",
       "type": "event"
     },
     {
       "inputs": [
         {
           "internalType": "address",
-          "name": "_newAdmin",
+          "name": "_adminAddress",
           "type": "address"
         }
       ],
       "name": "addAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_content",
+          "type": "string"
+        }
+      ],
+      "name": "addComment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_followUp",
+          "type": "string"
+        }
+      ],
+      "name": "addFollowUp",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -200,7 +393,7 @@ export const CONTRACT_ABI =  [
           "type": "uint256"
         }
       ],
-      "name": "batalkanPengaduan",
+      "name": "boostComplaint",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -208,32 +401,30 @@ export const CONTRACT_ABI =  [
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "_judul",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_deskripsi",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_kategori",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_lokasi",
-          "type": "string"
-        },
-        {
           "internalType": "uint256",
-          "name": "_tanggalKejadian",
+          "name": "_id",
           "type": "uint256"
         }
       ],
-      "name": "buatPengaduan",
+      "name": "cancelComplaint",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_newStatus",
+          "type": "uint8"
+        }
+      ],
+      "name": "changeStatus",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -251,16 +442,16 @@ export const CONTRACT_ABI =  [
           "type": "uint256"
         }
       ],
-      "name": "daftarKomentar",
+      "name": "comments",
       "outputs": [
         {
           "internalType": "address",
-          "name": "pengirim",
+          "name": "submitter",
           "type": "address"
         },
         {
           "internalType": "string",
-          "name": "isi",
+          "name": "content",
           "type": "string"
         },
         {
@@ -280,7 +471,7 @@ export const CONTRACT_ABI =  [
           "type": "uint256"
         }
       ],
-      "name": "daftarPengaduan",
+      "name": "complaints",
       "outputs": [
         {
           "internalType": "uint256",
@@ -289,37 +480,37 @@ export const CONTRACT_ABI =  [
         },
         {
           "internalType": "string",
-          "name": "judul",
+          "name": "title",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "deskripsi",
+          "name": "description",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "kategori",
+          "name": "category",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "lokasi",
+          "name": "location",
           "type": "string"
         },
         {
           "internalType": "uint256",
-          "name": "tanggalKejadian",
+          "name": "incidentDate",
           "type": "uint256"
         },
         {
           "internalType": "address",
-          "name": "pengirim",
+          "name": "submitter",
           "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "timestampPengiriman",
+          "name": "submissionTimestamp",
           "type": "uint256"
         },
         {
@@ -329,12 +520,22 @@ export const CONTRACT_ABI =  [
         },
         {
           "internalType": "string",
-          "name": "tindakLanjutPemerintah",
+          "name": "governmentFollowUp",
           "type": "string"
         },
         {
           "internalType": "uint256",
           "name": "upvoteCount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalVocaStaked",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "commentCount",
           "type": "uint256"
         }
       ],
@@ -343,7 +544,7 @@ export const CONTRACT_ABI =  [
     },
     {
       "inputs": [],
-      "name": "getAllPengaduanIds",
+      "name": "getAllComplaintIds",
       "outputs": [
         {
           "internalType": "uint256[]",
@@ -362,18 +563,18 @@ export const CONTRACT_ABI =  [
           "type": "uint256"
         }
       ],
-      "name": "getKomentarPengaduan",
+      "name": "getComments",
       "outputs": [
         {
           "components": [
             {
               "internalType": "address",
-              "name": "pengirim",
+              "name": "submitter",
               "type": "address"
             },
             {
               "internalType": "string",
-              "name": "isi",
+              "name": "content",
               "type": "string"
             },
             {
@@ -382,7 +583,7 @@ export const CONTRACT_ABI =  [
               "type": "uint256"
             }
           ],
-          "internalType": "struct VoxChain.Komentar[]",
+          "internalType": "struct VoxChain.Comment[]",
           "name": "",
           "type": "tuple[]"
         }
@@ -398,100 +599,79 @@ export const CONTRACT_ABI =  [
           "type": "uint256"
         }
       ],
-      "name": "getPengaduan",
+      "name": "getComplaint",
       "outputs": [
         {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "judul",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "deskripsi",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "kategori",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "lokasi",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tanggalKejadian",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "pengirim",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "timestampPengiriman",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "string",
-          "name": "tindakLanjutPemerintah",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "upvoteCount",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "_kategori",
-          "type": "string"
-        }
-      ],
-      "name": "getPengaduanIdsByKategori",
-      "outputs": [
-        {
-          "internalType": "uint256[]",
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "category",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "location",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "incidentDate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "submitter",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "submissionTimestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "string",
+              "name": "governmentFollowUp",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "upvoteCount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalVocaStaked",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "commentCount",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct VoxChain.Complaint",
           "name": "",
-          "type": "uint256[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "_status",
-          "type": "uint8"
-        }
-      ],
-      "name": "getPengaduanIdsByStatus",
-      "outputs": [
-        {
-          "internalType": "uint256[]",
-          "name": "",
-          "type": "uint256[]"
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -499,7 +679,26 @@ export const CONTRACT_ABI =  [
     },
     {
       "inputs": [],
-      "name": "getTotalPengaduan",
+      "name": "getTotalComplaintCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        }
+      ],
+      "name": "getVocaBalance",
       "outputs": [
         {
           "internalType": "uint256",
@@ -527,7 +726,7 @@ export const CONTRACT_ABI =  [
       "inputs": [
         {
           "internalType": "address",
-          "name": "_admin",
+          "name": "_adminAddress",
           "type": "address"
         }
       ],
@@ -537,19 +736,54 @@ export const CONTRACT_ABI =  [
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "_id",
-          "type": "uint256"
+          "internalType": "string",
+          "name": "_title",
+          "type": "string"
         },
         {
           "internalType": "string",
-          "name": "_isi",
+          "name": "_description",
           "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_category",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_location",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_incidentDate",
+          "type": "uint256"
         }
       ],
-      "name": "tambahKomentar",
+      "name": "submitComplaint",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -563,11 +797,31 @@ export const CONTRACT_ABI =  [
         },
         {
           "internalType": "string",
-          "name": "_tindakLanjut",
+          "name": "_newTitle",
           "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_newDescription",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_newCategory",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_newLocation",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_newIncidentDate",
+          "type": "uint256"
         }
       ],
-      "name": "tambahTindakLanjut",
+      "name": "updateComplaint",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -578,37 +832,403 @@ export const CONTRACT_ABI =  [
           "internalType": "uint256",
           "name": "_id",
           "type": "uint256"
+        }
+      ],
+      "name": "upvoteComplaint",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "vocaToken",
+      "outputs": [
+        {
+          "internalType": "contract IVocaToken",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ];
+
+// ABI untuk antarmuka IVocaToken
+export const VOCA_TOKEN_ABI =[
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
         },
+        {
+          "internalType": "uint256",
+          "name": "allowance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "needed",
+          "type": "uint256"
+        }
+      ],
+      "name": "ERC20InsufficientAllowance",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "needed",
+          "type": "uint256"
+        }
+      ],
+      "name": "ERC20InsufficientBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "approver",
+          "type": "address"
+        }
+      ],
+      "name": "ERC20InvalidApprover",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        }
+      ],
+      "name": "ERC20InvalidReceiver",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "ERC20InvalidSender",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        }
+      ],
+      "name": "ERC20InvalidSpender",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Approval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
         {
           "internalType": "uint8",
-          "name": "_statusBaru",
+          "name": "",
           "type": "uint8"
         }
       ],
-      "name": "ubahStatus",
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "mint",
       "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "minter",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newMinter",
+          "type": "address"
+        }
+      ],
+      "name": "setMinter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
           "internalType": "uint256",
-          "name": "_id",
+          "name": "value",
           "type": "uint256"
         }
       ],
-      "name": "upvotePengaduan",
-      "outputs": [],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     }
   ];
 
-export const getContract = (signer: ethers.Signer) => {
-  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+// Fungsi untuk mendapatkan instance kontrak VoxChain
+export const getContract = (signerOrProvider: Signer | Provider): Contract => {
+  return new ethers.Contract(VOXCHAIN_CONTRACT_ADDRESS, VOXCHAIN_ABI, signerOrProvider);
 };
 
-export const getContractReadOnly = (provider: ethers.Provider) => {
-  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+// Fungsi untuk mendapatkan instance kontrak VocaToken
+export const getVocaTokenContract = (signerOrProvider: Signer | Provider): Contract => {
+    // Pastikan Anda telah mengisi alamat VocaToken yang benar
+    if (VOCA_TOKEN_CONTRACT_ADDRESS === "0x...") {
+        throw new Error("VOCA_TOKEN_CONTRACT_ADDRESS belum diisi. Silakan perbarui dengan alamat kontrak VocaToken Anda.");
+    }
+    return new ethers.Contract(VOCA_TOKEN_CONTRACT_ADDRESS, VOCA_TOKEN_ABI, signerOrProvider);
+};
+
+export const getContractReadOnly = (provider: Provider): Contract => {
+  return new ethers.Contract(VOXCHAIN_CONTRACT_ADDRESS, VOXCHAIN_ABI, provider);
 };

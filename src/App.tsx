@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ethers } from 'ethers';
-import { getContract, getContractReadOnly } from './utils/contract';
+import { getContract, getContractReadOnly, getVocaTokenContract } from './utils/contract';
 
 // Components
 import Header from './components/Header';
@@ -50,6 +50,9 @@ const App: React.FC = () => {
   // State baru untuk admin
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // State baru untuk saldo Voca
+  const [vocaBalance, setVocaBalance] = useState('0');
+
   // Refs for scrolling
   const sectionRefs = {
     beranda: useRef<HTMLDivElement>(null),
@@ -57,8 +60,6 @@ const App: React.FC = () => {
     fitur: useRef<HTMLDivElement>(null),
     pengaduan: useRef<HTMLDivElement>(null),
   };
-
-
 
   // Scroll to section function
   const scrollToSection = (section: string) => {
@@ -91,6 +92,19 @@ const App: React.FC = () => {
     }
   };
 
+  // Fetch Voca token balance
+  const fetchVocaBalance = async (address: string) => {
+    try {
+      if (!provider) return;
+      const vocaTokenContract = getVocaTokenContract(provider);
+      const balance = await vocaTokenContract.balanceOf(address);
+      setVocaBalance(ethers.formatUnits(balance, 18)); // Menggunakan 18 desimal sesuai standar ERC20
+    } catch (error) {
+      console.error('Failed to fetch Voca balance:', error);
+      setVocaBalance('0');
+    }
+  };
+
   // Connect wallet
   const connectWallet = async () => {
     try {
@@ -112,6 +126,7 @@ const App: React.FC = () => {
         
         fetchContractOwner(providerInstance);
         checkIfAdmin(providerInstance, address);
+        fetchVocaBalance(address);
       } else {
         setErrorMessage('Please install MetaMask or another Ethereum wallet.');
       }
@@ -141,17 +156,61 @@ const App: React.FC = () => {
       setErrorMessage('');
       
       const contract = getContract(signer);
-      const tx = await contract.buatPengaduan(judul, deskripsi, kategori, lokasi, tanggalKejadian);
+      const tx = await contract.submitComplaint(judul, deskripsi, kategori, lokasi, tanggalKejadian);
       await tx.wait();
       
       fetchComplaints();
     } catch (error) {
       console.error('Failed to submit complaint:', error);
-      setErrorMessage('Gagal mengirim pengaduan. Pastikan Anda memiliki saldo yang cukup.');
+      setErrorMessage('Gagal mengirim pengaduan. Pastikan Anda sudah memberikan persetujuan (approve) untuk Voca Token dan memiliki saldo yang cukup.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Approve Voca Tokens
+  const approveTokens = async (amount: number) => {
+    if (!signer) {
+        setErrorMessage('Mohon hubungkan wallet Anda terlebih dahulu.');
+        return;
+    }
+    try {
+        setIsLoading(true);
+        const vocaTokenContract = getVocaTokenContract(signer);
+        const voxChainAddress = getContract(signer).target;
+        const amountToApprove = ethers.parseUnits(amount.toString(), 18);
+        const tx = await vocaTokenContract.approve(voxChainAddress, amountToApprove);
+        await tx.wait();
+        setErrorMessage('Persetujuan berhasil! Anda sekarang bisa membuat pengaduan.');
+    } catch (error) {
+        console.error('Failed to approve tokens:', error);
+        setErrorMessage('Gagal memberikan persetujuan token. Silakan coba lagi.');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  // Update complaint
+  const updateComplaint = async (id: number, judul: string, deskripsi: string, kategori: string, lokasi: string, tanggalKejadian: number) => {
+    if (!signer) {
+        setErrorMessage('Mohon hubungkan wallet Anda terlebih dahulu.');
+        return;
+    }
+    try {
+        setIsLoading(true);
+        const contract = getContract(signer);
+        const tx = await contract.updateComplaint(id, judul, deskripsi, kategori, lokasi, tanggalKejadian);
+        await tx.wait();
+        fetchComplaints();
+        setErrorMessage('Pengaduan berhasil diperbarui!');
+    } catch (error) {
+        console.error('Failed to update complaint:', error);
+        setErrorMessage('Gagal memperbarui pengaduan. Pastikan Anda adalah pengirimnya dan status masih Terkirim.');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   // Change complaint status (Owner or Admin)
   const changeComplaintStatus = async (complaintId: number, newStatus: number) => {
@@ -170,7 +229,7 @@ const App: React.FC = () => {
       setErrorMessage('');
       
       const contract = getContract(signer);
-      const tx = await contract.ubahStatus(complaintId, newStatus);
+      const tx = await contract.changeStatus(complaintId, newStatus);
       await tx.wait();
       
       fetchComplaints();
@@ -199,7 +258,7 @@ const App: React.FC = () => {
       setErrorMessage('');
       
       const contract = getContract(signer);
-      const tx = await contract.tambahTindakLanjut(complaintId, tindakLanjut);
+      const tx = await contract.addFollowUp(complaintId, tindakLanjut);
       await tx.wait();
 
       fetchComplaints();
@@ -223,13 +282,34 @@ const App: React.FC = () => {
       setErrorMessage('');
 
       const contract = getContract(signer);
-      const tx = await contract.upvotePengaduan(complaintId);
+      const tx = await contract.upvoteComplaint(complaintId);
       await tx.wait();
 
       fetchComplaints();
     } catch (error) {
       console.error('Failed to upvote complaint:', error);
       setErrorMessage('Gagal memberikan upvote. Pastikan Anda belum pernah upvote pengaduan ini.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Boost complaint function
+  const boostComplaint = async (complaintId: number) => {
+    if (!signer) {
+      setErrorMessage('Mohon hubungkan wallet Anda terlebih dahulu.');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const contract = getContract(signer);
+      const tx = await contract.boostComplaint(complaintId);
+      await tx.wait();
+      fetchComplaints();
+      setErrorMessage('Pengaduan berhasil di-boost!');
+    } catch (error) {
+      console.error('Failed to boost complaint:', error);
+      setErrorMessage('Gagal me-boost pengaduan. Pastikan saldo Voca mencukupi atau Anda belum pernah me-boost pengaduan ini.');
     } finally {
       setIsLoading(false);
     }
@@ -247,7 +327,7 @@ const App: React.FC = () => {
       setErrorMessage('');
 
       const contract = getContract(signer);
-      const tx = await contract.tambahKomentar(complaintId, comment);
+      const tx = await contract.addComment(complaintId, comment);
       await tx.wait();
       
       await fetchComments(complaintId);
@@ -273,11 +353,11 @@ const App: React.FC = () => {
       }
 
       const readOnlyContract = getContractReadOnly(readOnlyProvider);
-      const fetchedComments = await readOnlyContract.getKomentarPengaduan(complaintId);
+      const fetchedComments = await readOnlyContract.getComments(complaintId);
       
       const formattedComments = fetchedComments.map((comment: any) => ({
-        pengirim: comment.pengirim,
-        isi: comment.isi,
+        pengirim: comment.submitter,
+        isi: comment.content,
         timestamp: new Date(Number(comment.timestamp) * 1000).toLocaleString(),
       }));
       setComments(formattedComments);
@@ -344,7 +424,7 @@ const App: React.FC = () => {
     try {
       setIsLoading(true);
       const contract = getContract(signer);
-      const tx = await contract.batalkanPengaduan(complaintId);
+      const tx = await contract.cancelComplaint(complaintId);
       await tx.wait();
       setErrorMessage('Pengaduan berhasil dibatalkan!');
       fetchComplaints();
@@ -372,22 +452,24 @@ const App: React.FC = () => {
       const readOnlyContract = getContractReadOnly(readOnlyProvider);
       
       const fetchedComplaints: Complaint[] = [];
-      const totalPengaduan = await readOnlyContract.getTotalPengaduan();
+      const totalPengaduan = await readOnlyContract.getTotalComplaintCount();
 
       for (let i = 1; i <= Number(totalPengaduan); i++) {
-        const complaint = await readOnlyContract.getPengaduan(i);
+        const complaint = await readOnlyContract.getComplaint(i);
         
         fetchedComplaints.push({
           id: complaint.id.toString(),
-          judul: complaint.judul,
-          deskripsi: complaint.deskripsi,
-          kategori: complaint.kategori,
-          lokasi: complaint.lokasi,
-          tanggalKejadian: new Date(Number(complaint.tanggalKejadian) * 1000).toLocaleString(),
-          pengirim: complaint.pengirim,
-          timestampPengiriman: new Date(Number(complaint.timestampPengiriman) * 1000).toLocaleString(),
+          judul: complaint.title,
+          deskripsi: complaint.description,
+          kategori: complaint.category,
+          lokasi: complaint.location,
+          // Mengubah di sini: Jangan konversi ke toLocaleString()
+          // Biarkan sebagai timestamp atau string timestamp
+          tanggalKejadian: complaint.incidentDate.toString(), 
+          pengirim: complaint.submitter,
+          timestampPengiriman: new Date(Number(complaint.submissionTimestamp) * 1000).toLocaleString(),
           status: complaint.status.toString(),
-          tindakLanjutPemerintah: complaint.tindakLanjutPemerintah,
+          tindakLanjutPemerintah: complaint.governmentFollowUp,
           upvoteCount: Number(complaint.upvoteCount)
         });
       }
@@ -407,42 +489,52 @@ const App: React.FC = () => {
       try {
         const contract = getContractReadOnly(provider);
         
-        contract.on('PengaduanBaru', () => {
+        contract.on('ComplaintSubmitted', () => {
+          fetchComplaints();
+          if (walletAddress) fetchVocaBalance(walletAddress);
+        });
+        
+        contract.on('StatusChanged', () => {
+          fetchComplaints();
+          if (walletAddress) fetchVocaBalance(walletAddress);
+        });
+
+        contract.on('FollowUpAdded', () => {
+          fetchComplaints();
+        });
+
+        contract.on('Upvoted', () => {
           fetchComplaints();
         });
         
-        contract.on('StatusDiubah', () => {
+        contract.on('ComplaintBoosted', () => {
           fetchComplaints();
         });
-
-        contract.on('TindakLanjutDitambahkan', () => {
-          fetchComplaints();
-        });
-
-        contract.on('UpvoteDitambahkan', () => {
+        
+        contract.on('ComplaintUpdated', () => {
           fetchComplaints();
         });
 
         // Event listener baru untuk komentar
-        contract.on('KomentarDitambahkan', (complaintId: any) => {
+        contract.on('CommentAdded', (complaintId: any) => {
           fetchComments(Number(complaintId));
         });
         
         // Event listener baru untuk admin
-        contract.on('AdminDitambahkan', () => {
+        contract.on('AdminAdded', () => {
           if (provider && walletAddress) {
             checkIfAdmin(provider, walletAddress);
           }
         });
         
-        contract.on('AdminDihapus', () => {
+        contract.on('AdminRemoved', () => {
           if (provider && walletAddress) {
             checkIfAdmin(provider, walletAddress);
           }
         });
         
         // Event listener baru untuk pembatalan
-        contract.on('PengaduanDibatalkan', () => {
+        contract.on('ComplaintCanceled', () => {
             fetchComplaints();
         });
 
@@ -495,6 +587,7 @@ const App: React.FC = () => {
       fetchComplaintsWithRetry();
       if (provider && walletAddress) {
         checkIfAdmin(provider, walletAddress);
+        fetchVocaBalance(walletAddress);
       }
     }
   }, [status, provider, walletAddress]);
@@ -533,8 +626,11 @@ const App: React.FC = () => {
           addComment={addComment}
           addAdmin={addAdmin}
           removeAdmin={removeAdmin}
-          // Tambahkan prop baru
           cancelComplaint={cancelComplaint}
+          vocaBalance={vocaBalance}
+          approveTokens={approveTokens}
+          boostComplaint={boostComplaint}
+          updateComplaint={updateComplaint}
         />
       </main>
       
